@@ -1,0 +1,21 @@
+name: Overlay guard
+
+# Fails the build if an upstream-owned file was modified outside the frozen
+# overlay list. See INCENSION-OVERLAY.md for the reasoning.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  overlay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so the merge-base against upstream can be computed.
+          fetch-depth: 0
+
+      - name: Check overlay boundary
+        run: bash scripts/check-overlay.sh
