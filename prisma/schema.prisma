@@ -183,7 +183,7 @@ model Automation {
   // postId / matchAnyPost do not apply to it.
   dmTriggerEnabled Boolean @default(false)
   dmMessage      String
-  openingDmEnabled     Boolean @default(false)
+  openingDmEnabled     Boolean @default(true)
   openingDmMessage     String?
   openingDmButtonLabel String?
   linkButtonLabel      String?
@@ -293,6 +293,10 @@ model LinkClick {
   automationId       String
   instagramAccountId String
   trackedLinkId      String
+  // Identifies WHICH recipient clicked, not just which campaign. Carried from
+  // the DM link as ?t= and matched against recipientToken(automationId,
+  // commenterId) to resolve a click back to a specific Instagram commenter.
+  recipientToken     String?
   ipHash             String?
   userAgent          String?
   referrer           String?
@@ -307,6 +311,7 @@ model LinkClick {
   @@index([automationId])
   @@index([instagramAccountId])
   @@index([trackedLinkId])
+  @@index([recipientToken])
   @@index([createdAt])
   @@index([workspaceId, createdAt])
 }

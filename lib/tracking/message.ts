@@ -51,14 +51,22 @@ export function renderMessageWithoutLink({
     .trim();
 }
 
-export function buildTrackedUrl(slug: string, baseUrl?: string) {
+export function buildTrackedUrl(
+  slug: string,
+  baseUrl?: string,
+  recipientToken?: string | null
+) {
   const resolvedBaseUrl =
     baseUrl ??
     (typeof window !== "undefined"
       ? window.location.origin
       : process.env.NEXTAUTH_URL ?? "http://localhost:3000");
 
-  return `${resolvedBaseUrl.replace(/\/$/, "")}/r/${slug}`;
+  const url = `${resolvedBaseUrl.replace(/\/$/, "")}/r/${slug}`;
+
+  // The per-recipient token rides the tracked link so the click — and whatever
+  // the visitor does after it — attributes back to the person who commented.
+  return recipientToken ? `${url}?t=${encodeURIComponent(recipientToken)}` : url;
 }
 
 export function renderMessageWithTracking({
@@ -66,18 +74,20 @@ export function renderMessageWithTracking({
   commenterName,
   trackedLinks,
   baseUrl,
+  recipientToken,
 }: {
   message: string;
   commenterName?: string | null;
   trackedLinks?: MessageTrackedLink[];
   baseUrl?: string;
+  recipientToken?: string | null;
 }) {
   let rendered = message.replace(/\{username\}/gi, commenterName ?? "there");
   const primaryLink = trackedLinks?.[0];
 
   if (!primaryLink) return rendered;
 
-  const trackedUrl = buildTrackedUrl(primaryLink.slug, baseUrl);
+  const trackedUrl = buildTrackedUrl(primaryLink.slug, baseUrl, recipientToken);
 
   if (/\{link\}/i.test(rendered)) {
     return rendered.replace(/\{link\}/gi, trackedUrl);
