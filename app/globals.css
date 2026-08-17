@@ -1,23 +1,43 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;1,400&family=Lato:wght@300;400;700&display=swap");
 
-/* ManyChat Alternative — Design System
-   Plain and functional. No gradients, glass, glow, or animation. */
+/* Incension — Universal Style Guide
+   Tokens mirror GRANT-OS/UNIVERSAL-STYLE-GUIDE.md and brand-tokens.css.
+   Rule that trips people up: funnel surfaces are sharp, dashboard surfaces
+   are rounded. This is a dashboard. */
 
 @theme inline {
-  --color-background: #ffffff;
-  --color-foreground: #18181b;
-  --color-surface: #f7f7f8;
-  --color-surface-hover: #efeff1;
-  --color-border: #e4e4e7;
-  --color-border-hover: #d4d4d8;
-  --color-muted: #71717a;
-  --color-accent: #f97316;
-  --color-accent-hover: #ea580c;
-  --color-success: #16a34a;
-  --color-error: #dc2626;
-  --color-warning: #d97706;
-  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Surfaces */
+  --color-background: #f8fcff;      /* near-white page */
+  --color-foreground: #1a2830;      /* headings */
+  --color-surface: #ffffff;         /* cards, fields */
+  --color-surface-hover: #eef7fd;   /* ice */
+  --color-border: rgba(74, 143, 181, 0.22);
+  --color-border-hover: rgba(74, 143, 181, 0.45);
+  --color-muted: #7a9aaa;           /* captions */
+  --color-body: #3d5a6b;            /* paragraphs */
+
+  /* Brand blues */
+  --color-sky: #c8dff0;
+  --color-wash: #daedf8;
+  --color-ice: #eef7fd;
+  --color-steel: #4a8fb5;
+  --color-mid: #6aadd0;
+  --color-accent: #2a6080;          /* deep navy — primary CTA */
+  --color-accent-hover: #1e4f68;    /* dark navy */
+
+  --color-success: #3f7d5c;
+  --color-error: #b4534a;
+  --color-warning: #b5813f;
+
+  --font-sans: "Lato", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
   --font-mono: ui-monospace, monospace;
+
+  /* Dashboard geometry — rounded, per the style guide */
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
 }
 
 html {
@@ -26,8 +46,24 @@ html {
 
 body {
   background: var(--color-background);
-  color: var(--color-foreground);
+  color: var(--color-body);
   font-family: var(--font-sans);
+  font-weight: 400;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  color: var(--color-foreground);
+  letter-spacing: -0.01em;
+}
+
+/* Eyebrows / section labels — uppercase, wide tracking, per the guide. */
+.eyebrow {
+  font-size: 10.5px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--color-mid);
 }
 
 /* Focus ring — visible, for keyboard users. */
@@ -59,6 +95,8 @@ select:focus-visible {
 .panel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 24px rgba(42, 96, 128, 0.06);
 }
 
 /* Kept as no-op aliases so existing markup degrades to plain surfaces
@@ -67,6 +105,14 @@ select:focus-visible {
 .glass-strong {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 24px rgba(42, 96, 128, 0.06);
+}
+
+/* Dashboard controls: inputs and small buttons pick up the softer radius
+   so nothing reads as the old sharp-cornered funnel chassis. */
+input, textarea, select, button {
+  border-radius: var(--radius-sm);
 }
 
 .gradient-mesh {
