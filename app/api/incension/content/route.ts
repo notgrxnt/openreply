@@ -101,7 +101,22 @@ export async function GET(request: NextRequest) {
             "shares",
           ]);
           insightsAvailable = true;
-          return data;
+
+          // Retention, asked for separately on purpose. Meta rejects the WHOLE
+          // insights call if one metric doesn't apply to a media type, so
+          // bundling watch time with the base four would cost us views and
+          // reach on every non-reel post. Its own call degrades to null.
+          let watch: Record<string, number> = {};
+          try {
+            watch = (await getMediaInsights(accessToken, m.id, [
+              "ig_reels_avg_watch_time",
+              "ig_reels_video_view_total_time",
+            ])) as unknown as Record<string, number>;
+          } catch {
+            // Not a reel, or the metric is unavailable for this post. Fine.
+          }
+
+          return { ...data, ...watch };
         } catch (err) {
           if (!(err instanceof PermissionError)) {
             console.warn("[content] insights failed for", m.id);
@@ -117,11 +132,16 @@ export async function GET(request: NextRequest) {
       insights,
     });
 
-    const totals = rows.reduce(
+    // Headline figures describe Era 2 — the account being rebuilt. Era 1 is a
+    // vaulted archive; folding its 15M-view reels into "totals" would drown
+    // every number that describes this week.
+    const era2 = rows.filter((r) => r.era === 2);
+
+    const totals = era2.reduce(
       (acc, r) => ({
         reels: acc.reels + 1,
-        dmsSent: acc.dmsSent + r.dmsSent,
-        clicks: acc.clicks + r.clicks,
+        dmsSent: acc.dmsSent + (r.dmsSent ?? 0),
+        clicks: acc.clicks + (r.clicks ?? 0),
         signups: acc.signups + r.signups,
         qualified: acc.qualified + r.qualified,
         dmsLast24h: acc.dmsLast24h + r.dmsLast24h,
@@ -145,11 +165,11 @@ export async function GET(request: NextRequest) {
     let dedupedClicks = 0;
     let dedupedSignups = 0;
     let dedupedQualified = 0;
-    for (const r of rows) {
+    for (const r of era2) {
       if (!r.campaignId || seen.has(r.campaignId)) continue;
       seen.add(r.campaignId);
-      dedupedDms += r.dmsSent;
-      dedupedClicks += r.clicks;
+      dedupedDms += r.dmsSent ?? 0;
+      dedupedClicks += r.clicks ?? 0;
       dedupedSignups += r.signups;
       dedupedQualified += r.qualified;
     }

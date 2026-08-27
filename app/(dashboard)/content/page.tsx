@@ -27,6 +27,12 @@ function num(n: number | null | undefined): string {
   return n.toLocaleString();
 }
 
+/** Average watch time. The one metric that predicts breaking past your own followers. */
+function secs(v: number | null): string {
+  if (v === null) return "—";
+  return `${v.toFixed(1)}s`;
+}
+
 function pct(v: number | null): string {
   if (v === null) return "—";
   return `${(v * 100).toFixed(v * 100 >= 10 ? 0 : 1)}%`;
@@ -202,13 +208,19 @@ export default function ContentPage() {
         <h2 className="text-lg font-semibold text-foreground mb-3">
           Full funnel per reel
         </h2>
+        <p className="text-xs text-muted mb-3">
+          Era 2 — everything since the restart on 12 Aug 2026. Era 1 is vaulted
+          below.
+        </p>
         <div className="panel rounded overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-muted border-b border-[var(--border)]">
                 <th className="px-4 py-3 font-medium">Reel</th>
                 <th className="px-3 py-3 font-medium text-right">Views</th>
+                <th className="px-3 py-3 font-medium text-right">Watch</th>
                 <th className="px-3 py-3 font-medium text-right">Comments</th>
+                <th className="px-3 py-3 font-medium text-right">Cmt %</th>
                 <th className="px-3 py-3 font-medium text-right">DMs</th>
                 <th className="px-3 py-3 font-medium text-right">Clicks</th>
                 <th className="px-3 py-3 font-medium text-right">CTR</th>
@@ -218,7 +230,7 @@ export default function ContentPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {rows.filter((r) => r.era === 2).map((r) => (
                 <tr
                   key={r.mediaId}
                   className="border-b border-[var(--border)] last:border-0"
@@ -251,7 +263,9 @@ export default function ContentPage() {
                     </div>
                   </td>
                   <td className="px-3 py-3 text-right">{num(r.views)}</td>
+                  <td className="px-3 py-3 text-right">{secs(r.avgWatchSeconds)}</td>
                   <td className="px-3 py-3 text-right">{num(r.comments)}</td>
+                  <td className="px-3 py-3 text-right">{pct(r.commentRate)}</td>
                   <td className="px-3 py-3 text-right">{num(r.dmsSent)}</td>
                   <td className="px-3 py-3 text-right">{num(r.clicks)}</td>
                   <td className="px-3 py-3 text-right">{pct(r.ctr)}</td>
@@ -268,10 +282,80 @@ export default function ContentPage() {
           </table>
         </div>
         <p className="text-xs text-muted mt-2">
-          Qual. = tier 1–2 leads. Core = signups from your core markets.
-          Campaign-level attribution; per-person joins arrive once the
-          recipient token is live on the portal.
+          Watch = average seconds viewed, the signal Instagram uses to decide
+          whether to push a reel past your own followers. Cmt % = comments ÷
+          views, the CTA metric that compares across eras.
+          CTR = distinct people who clicked ÷ DMs sent, so it cannot exceed
+          100%. Qual. = tier 1–2 leads. Core = signups from your core markets.
+          A dash under DMs means that reel is served by the catch-all campaign
+          and predates per-reel attribution — the number is genuinely unknown
+          rather than zero.
         </p>
+      </section>
+
+      <section className="mt-8">
+        <details className="panel rounded p-4">
+          <summary className="cursor-pointer text-sm font-medium text-foreground">
+            Era 1 vault — before the restart
+            <span className="text-muted font-normal">
+              {" "}
+              · benchmarks only, excluded from every figure above
+            </span>
+          </summary>
+          <p className="text-xs text-muted mt-3 mb-3">
+            The account at full reach. DM columns are omitted on purpose: these
+            reels ran under different campaigns, or none, and their comment
+            counts are what carry forward. Use this for what a working hook
+            looked like at scale, not for how this week is going.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-muted border-b border-[var(--border)]">
+                  <th className="px-4 py-2 font-medium">Reel</th>
+                  <th className="px-3 py-2 font-medium text-right">Views</th>
+                  <th className="px-3 py-2 font-medium text-right">Comments</th>
+                  <th className="px-3 py-2 font-medium text-right">Cmt %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows
+                  .filter((r) => r.era === 1)
+                  .map((r) => (
+                    <tr
+                      key={r.mediaId}
+                      className="border-b border-[var(--border)] last:border-0"
+                    >
+                      <td className="px-4 py-2">
+                        <p className="text-foreground truncate max-w-[26rem]">
+                          {r.permalink ? (
+                            <a
+                              href={r.permalink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="hover:underline"
+                            >
+                              {title(r)}
+                            </a>
+                          ) : (
+                            title(r)
+                          )}
+                        </p>
+                        <p className="text-xs text-muted">{age(r.ageDays)}</p>
+                      </td>
+                      <td className="px-3 py-2 text-right">{num(r.views)}</td>
+                      <td className="px-3 py-2 text-right">
+                        {num(r.comments)}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        {pct(r.commentRate)}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
       </section>
     </div>
   );

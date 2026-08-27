@@ -14,6 +14,7 @@
  */
 
 import { prisma } from "@/lib/db/client";
+import { recipientToken } from "@/lib/tracking/recipient-token";
 import {
   fetchFunnelAggregates,
   utmContentFromUrl,
@@ -22,6 +23,16 @@ import {
 } from "./supabase";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The restart. Everything before this is Era 1 — a dormant-account archive kept
+ * for benchmarks (peak reach, best CTA rates) and deliberately excluded from
+ * day-to-day reads. Everything after is Era 2, the account being rebuilt.
+ *
+ * A FIXED DATE, not a rolling window: a rolling 14 days would quietly vault
+ * this week's reels next week, which is the opposite of what the split is for.
+ */
+export const ERA_2_START = new Date("2026-08-12T00:00:00Z").getTime();
 
 export interface ReelRow {
   mediaId: string;
@@ -38,16 +49,21 @@ export interface ReelRow {
   comments: number;
   saved: number | null;
   shares: number | null;
+  /** Seconds. The metric that governs whether Instagram pushes past your followers. */
+  avgWatchSeconds: number | null;
 
   // Ours
   campaignId: string | null;
   campaignName: string | null;
   keywords: string[];
   utmContent: string | null;
-  dmsSent: number;
-  clicks: number;
+  dmsSent: number | null;       // null = not attributable to this reel yet
+  clicks: number | null;        // raw click events
+  uniqueClickers: number | null;// distinct people, for a click rate that can't exceed 100%
   dmsLast24h: number;
   clicksLast24h: number;
+  /** How dmsSent/clicks were derived, so the UI never presents a guess as a fact. */
+  attribution: "post-campaign" | "per-reel" | "unattributed";
 
   // Funnel (Supabase)
   signups: number;
@@ -56,8 +72,10 @@ export interface ReelRow {
   geoDisqualified: number;
 
   // Derived
+  era: 1 | 2;                   // 1 = vaulted benchmark, 2 = the working era
   commentToDm: number | null;   // DMs / comments
-  ctr: number | null;           // clicks / DMs
+  commentRate: number | null;   // comments / views — the CTA metric that survives era change
+  ctr: number | null;           // unique clickers / DMs
   signupRate: number | null;    // signups / clicks
   leadsPerThousandViews: number | null;
   isLive: boolean;              // still actively producing
@@ -128,8 +146,16 @@ export async function buildReelRows({
 
   // Counts in bulk rather than per-reel queries — a 150-post account would
   // otherwise fire several hundred round trips to render one page.
-  const [sentTotals, sent24h, clickTotals, clicks24h, funnel] =
-    await Promise.all([
+  const [
+    sentTotals,
+    sent24h,
+    clickTotals,
+    clicks24h,
+    funnel,
+    sentByMedia,
+    dmRecipients,
+    tokenClicks,
+  ] = await Promise.all([
       prisma.dmLog.groupBy({
         by: ["automationId"],
         where: { automationId: { in: automationIds }, status: "SENT" },
@@ -158,6 +184,34 @@ export async function buildReelRows({
         _count: { _all: true },
       }),
       fetchFunnelAggregates(),
+      // Per-reel DM counts. Only rows written since the mediaId migration have
+      // one; older rows stay unattributed rather than being guessed at.
+      prisma.dmLog.groupBy({
+        by: ["mediaId"],
+        where: {
+          automationId: { in: automationIds },
+          status: "SENT",
+          mediaId: { not: null },
+        },
+        _count: { _all: true },
+      }),
+      // The click → reel bridge. LinkClick has no mediaId, but it carries the
+      // recipient token, and the token is a pure function of
+      // (automationId, commenterId) — which DmLog has alongside mediaId.
+      prisma.dmLog.findMany({
+        where: {
+          automationId: { in: automationIds },
+          mediaId: { not: null },
+        },
+        select: { automationId: true, commenterId: true, mediaId: true },
+      }),
+      prisma.linkClick.findMany({
+        where: {
+          automationId: { in: automationIds },
+          recipientToken: { not: null },
+        },
+        select: { recipientToken: true },
+      }),
     ]);
 
   const countMap = (
@@ -174,6 +228,33 @@ export async function buildReelRows({
   const sent24By = countMap(sent24h);
   const clicksBy = countMap(clickTotals);
   const clicks24By = countMap(clicks24h);
+
+  // DMs actually recorded against each reel (post-migration rows only).
+  const dmsByMedia = new Map<string, number>();
+  for (const g of sentByMedia) {
+    if (g.mediaId) dmsByMedia.set(g.mediaId, g._count._all);
+  }
+
+  // token -> reel, then clicks -> reel. Distinct tokens give a click rate that
+  // is people, not taps, so it can never exceed 100% the way raw clicks do.
+  const mediaByToken = new Map<string, string>();
+  for (const d of dmRecipients) {
+    if (d.mediaId) {
+      mediaByToken.set(recipientToken(d.automationId, d.commenterId), d.mediaId);
+    }
+  }
+  const clicksByMedia = new Map<string, number>();
+  const clickersByMedia = new Map<string, Set<string>>();
+  for (const c of tokenClicks) {
+    const token = c.recipientToken;
+    if (!token) continue;
+    const mediaId = mediaByToken.get(token);
+    if (!mediaId) continue;
+    clicksByMedia.set(mediaId, (clicksByMedia.get(mediaId) ?? 0) + 1);
+    let set = clickersByMedia.get(mediaId);
+    if (!set) clickersByMedia.set(mediaId, (set = new Set()));
+    set.add(token);
+  }
 
   // Post-specific campaigns win the association; a catch-all is the fallback
   // for reels nothing else claims. That mirrors how the worker actually
@@ -195,10 +276,39 @@ export async function buildReelRows({
       (utmContent && funnel.byUtmContent.get(utmContent)) ||
       emptyAggregate(utmContent ?? "");
 
-    const dmsSent = automation ? (sentBy.get(automation.id) ?? 0) : 0;
-    const clicks = automation ? (clicksBy.get(automation.id) ?? 0) : 0;
-    const dmsLast24h = automation ? (sent24By.get(automation.id) ?? 0) : 0;
-    const clicksLast24h = automation ? (clicks24By.get(automation.id) ?? 0) : 0;
+    // Attribution, honestly. A post-specific campaign fires on exactly one
+    // reel, so its campaign totals ARE that reel's totals. A catch-all fires on
+    // every reel, so its totals belong to no single one — use the per-reel rows
+    // if we have them and report nothing if we don't. The old fallback printed
+    // the catch-all's career figures against all 38 reels, which read as data.
+    const postSpecific = Boolean(automation && !automation.matchAnyPost);
+
+    let dmsSent: number | null;
+    let clicks: number | null;
+    let uniqueClickers: number | null;
+    let attribution: ReelRow["attribution"];
+
+    if (postSpecific && automation) {
+      dmsSent = sentBy.get(automation.id) ?? 0;
+      clicks = clicksBy.get(automation.id) ?? 0;
+      uniqueClickers = clickersByMedia.get(m.id)?.size ?? null;
+      attribution = "post-campaign";
+    } else if (dmsByMedia.has(m.id)) {
+      dmsSent = dmsByMedia.get(m.id) ?? 0;
+      clicks = clicksByMedia.get(m.id) ?? 0;
+      uniqueClickers = clickersByMedia.get(m.id)?.size ?? 0;
+      attribution = "per-reel";
+    } else {
+      dmsSent = null;
+      clicks = null;
+      uniqueClickers = null;
+      attribution = "unattributed";
+    }
+
+    const dmsLast24h =
+      postSpecific && automation ? (sent24By.get(automation.id) ?? 0) : 0;
+    const clicksLast24h =
+      postSpecific && automation ? (clicks24By.get(automation.id) ?? 0) : 0;
 
     const comments = m.comments_count ?? 0;
     const views = ins?.views ?? null;
@@ -221,6 +331,13 @@ export async function buildReelRows({
       comments,
       saved: ins?.saved ?? null,
       shares: ins?.shares ?? null,
+      avgWatchSeconds: (() => {
+        // Meta reports this in milliseconds.
+        const raw = (ins as Record<string, number> | null)?.[
+          "ig_reels_avg_watch_time"
+        ];
+        return typeof raw === "number" ? raw / 1000 : null;
+      })(),
 
       campaignId: automation?.id ?? null,
       campaignName: automation?.name ?? null,
@@ -228,6 +345,8 @@ export async function buildReelRows({
       utmContent,
       dmsSent,
       clicks,
+      uniqueClickers,
+      attribution,
       dmsLast24h,
       clicksLast24h,
 
@@ -236,9 +355,15 @@ export async function buildReelRows({
       coreMarket: agg.core_market,
       geoDisqualified: agg.geo_disqualified,
 
-      commentToDm: ratio(dmsSent, comments),
-      ctr: ratio(clicks, dmsSent),
-      signupRate: ratio(agg.signups, clicks),
+      era: new Date(m.timestamp).getTime() >= ERA_2_START ? 2 : 1,
+      commentToDm: dmsSent === null ? null : ratio(dmsSent, comments),
+      commentRate: views ? comments / views : null,
+      // Unique clickers, not raw taps — a rate that cannot exceed 100%.
+      ctr:
+        uniqueClickers === null || dmsSent === null
+          ? null
+          : ratio(uniqueClickers, dmsSent),
+      signupRate: clicks === null ? null : ratio(agg.signups, clicks),
       leadsPerThousandViews: views ? (agg.signups / views) * 1000 : null,
       isLive: dmsLast24h > 0 || clicksLast24h > 0,
     };
@@ -256,6 +381,9 @@ export async function buildReelRows({
  * the last week that hasn't moved yet.
  */
 export function whatsWorkingNow(rows: ReelRow[], limit = 5): ReelRow[] {
+  // Era 2 only. A vaulted 15M-view reel from last year is not "working now".
+  rows = rows.filter((r) => r.era === 2);
+
   const active = rows
     .filter((r) => r.isLive)
     .sort(

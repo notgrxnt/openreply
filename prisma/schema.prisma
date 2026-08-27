@@ -227,6 +227,10 @@ model DmLog {
   commenterName String?
   commentText   String
   commentId     String
+  // Which reel the comment was on. The worker already receives this to match
+  // campaigns; persisting it is what lets a catch-all campaign's DMs be split
+  // back out per reel instead of reported as one lump.
+  mediaId       String?
   matchedKeyword String?
   status        DmStatus @default(PENDING)
   attempts      Int      @default(0)
@@ -251,6 +255,7 @@ model DmLog {
   @@index([automationId])
   @@index([instagramAccountId])
   @@index([status])
+  @@index([mediaId])
 }
 
 // Every comment the system has seen, from either the webhook or the polling
