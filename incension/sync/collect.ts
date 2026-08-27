@@ -12,6 +12,19 @@ import { recipientToken } from "@/lib/tracking/recipient-token";
 
 const ERA = process.env.INCENSION_ERA ?? "h1";
 
+/**
+ * Prisma's DmStatus is uppercase; the Health table has a CHECK constraint that
+ * only accepts these four lowercase values. SKIPPED_DEDUP collapses to
+ * "skipped" — from Health's point of view another campaign served the comment,
+ * which is the same outcome.
+ */
+const DM_STATUS: Record<string, string> = {
+  SENT: "sent",
+  FAILED: "failed",
+  PENDING: "pending",
+  SKIPPED_DEDUP: "skipped",
+};
+
 export type ContentPieceRow = {
   platform_post_id: string;
   url: string | null;
@@ -23,8 +36,6 @@ export type InstagramLeadRow = {
   ig_user_id: string;
   ig_username: string | null;
   ig_account_username: string | null;
-  ig_account_id: string | null;
-  automation_id: string;
   automation_name: string | null;
   matched_keyword: string | null;
   post_id: string | null;
@@ -163,8 +174,6 @@ export async function collectInstagramLeads(
       ig_user_id: l.commenterId,
       ig_username: l.commenterName ?? null,
       ig_account_username: l.automation.instagramAccount?.username ?? null,
-      ig_account_id: l.automation.instagramAccount?.id ?? null,
-      automation_id: l.automationId,
       automation_name: l.automation.name ?? null,
       matched_keyword: l.matchedKeyword ?? null,
       // The reel the COMMENT was on, not the campaign's. A catch-all campaign
@@ -178,7 +187,7 @@ export async function collectInstagramLeads(
       comment_id: l.commentId,
       comment_text: l.commentText ?? null,
       commented_at: l.createdAt.toISOString(),
-      dm_status: l.status,
+      dm_status: DM_STATUS[l.status] ?? "pending",
       dm_sent_at: l.dmSentAt?.toISOString() ?? null,
       dm_error: l.errorMessage ?? null,
       link_token: token,

@@ -45,17 +45,26 @@ export async function runSync(
     // Reels first — instagram_leads carries a FK to them.
     const pieces = await collectContentPieces();
     if (pieces.length) {
-      await upsert("content_pieces", pieces, "platform_post_id");
+      await upsert("health_content_pieces", pieces, "platform_post_id");
     }
 
     const leads = await collectInstagramLeads(since);
     if (leads.length) {
-      await upsert("instagram_leads", leads, "automation_id,comment_id");
+      // comment_id is the unique key the Health schema actually declares.
+      await upsert("health_instagram_leads", leads, "comment_id");
     }
 
     // Resolve commenter -> lead -> profile -> order, and push the creative down
     // the chain. Lives in Supabase because it only touches Health's own tables.
-    const stitched = await rpc("stitch_journey");
+    // stitch_journey is not in the Health schema yet. Until it is, the sync
+    // still does its job — the rows land and carry link_token — so a missing
+    // function must not fail the whole pass.
+    let stitched: number | null = null;
+    try {
+      stitched = await rpc("stitch_journey");
+    } catch {
+      stitched = null;
+    }
 
     return {
       ok: true,
