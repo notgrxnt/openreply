@@ -42,14 +42,43 @@ export type InstagramLeadRow = {
   era: string;
 };
 
-/** Reels that any campaign points at, so revenue can attribute to creative. */
+/**
+ * Every reel that has actually produced a DM, so revenue can attribute to
+ * creative.
+ *
+ * Two sources, deliberately. Campaigns pinned to a post give a URL and the
+ * keywords. But a catch-all campaign is pinned to nothing, so its reels would
+ * never appear here at all — and those are most of them. DmLog.mediaId closes
+ * that: any reel a comment actually came from becomes a piece, with or without
+ * a campaign of its own.
+ */
 export async function collectContentPieces(): Promise<ContentPieceRow[]> {
-  const automations = await prisma.automation.findMany({
-    where: { postId: { not: null } },
-    select: { postId: true, postUrl: true, keywords: true },
-  });
+  const [automations, mediaIds] = await Promise.all([
+    prisma.automation.findMany({
+      where: { postId: { not: null } },
+      select: { postId: true, postUrl: true, keywords: true },
+    }),
+    prisma.dmLog.findMany({
+      where: { mediaId: { not: null } },
+      select: { mediaId: true },
+      distinct: ["mediaId"],
+    }),
+  ]);
 
   const byPost = new Map<string, ContentPieceRow>();
+
+  // Reels seen in the DM log first — bare rows, filled in below if a campaign
+  // happens to know more about them.
+  for (const m of mediaIds) {
+    if (!m.mediaId) continue;
+    byPost.set(m.mediaId, {
+      platform_post_id: m.mediaId,
+      url: null,
+      keyword: null,
+      era: ERA,
+    });
+  }
+
   for (const a of automations) {
     if (!a.postId) continue;
     byPost.set(a.postId, {
@@ -59,6 +88,7 @@ export async function collectContentPieces(): Promise<ContentPieceRow[]> {
       era: ERA,
     });
   }
+
   return [...byPost.values()];
 }
 
@@ -80,6 +110,7 @@ export async function collectInstagramLeads(
       commenterName: true,
       commentId: true,
       commentText: true,
+      mediaId: true,
       matchedKeyword: true,
       status: true,
       dmSentAt: true,
@@ -126,6 +157,7 @@ export async function collectInstagramLeads(
   return logs.map((l) => {
     const token = recipientToken(l.automationId, l.commenterId);
     const click = clicksByToken.get(token);
+    const postId = l.mediaId ?? l.automation.postId ?? null;
 
     return {
       ig_user_id: l.commenterId,
@@ -135,8 +167,14 @@ export async function collectInstagramLeads(
       automation_id: l.automationId,
       automation_name: l.automation.name ?? null,
       matched_keyword: l.matchedKeyword ?? null,
-      post_id: l.automation.postId ?? null,
-      post_url: l.automation.postUrl ?? null,
+      // The reel the COMMENT was on, not the campaign's. A catch-all campaign
+      // has no postId, so reading it here left every catch-all lead with a
+      // null post — which is exactly the attribution this table exists to
+      // provide. The URL only travels when it actually describes that post.
+      post_id: postId,
+      post_url: postId && postId === l.automation.postId
+        ? (l.automation.postUrl ?? null)
+        : null,
       comment_id: l.commentId,
       comment_text: l.commentText ?? null,
       commented_at: l.createdAt.toISOString(),
