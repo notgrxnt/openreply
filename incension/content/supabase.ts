@@ -21,6 +21,13 @@ export interface FunnelAggregate {
   geo_disqualified: number;
   core_market: number;
   consented: number;
+  /** Invitations SENT. Not registrations, not attendance — neither is stored. */
+  webinar_invited: number;
+  /** Ever opened AND started a meditation. The only real usage signal. */
+  product_started: number;
+  /** Enrolled clients. Real money. */
+  conversions: number;
+  revenue_cents: number;
   last_signup: string | null;
 }
 
@@ -33,6 +40,10 @@ const EMPTY: FunnelAggregate = {
   geo_disqualified: 0,
   core_market: 0,
   consented: 0,
+  webinar_invited: 0,
+  product_started: 0,
+  conversions: 0,
+  revenue_cents: 0,
   last_signup: null,
 };
 
@@ -68,7 +79,7 @@ export async function fetchFunnelAggregates(): Promise<{
     const endpoint = new URL("/rest/v1/content_performance", url);
     endpoint.searchParams.set(
       "select",
-      "utm_content,signups,completed,qualified,tier_1,geo_disqualified,core_market,consented,last_signup"
+      "utm_content,signups,completed,qualified,tier_1,geo_disqualified,core_market,consented,webinar_invited,product_started,conversions,revenue_cents,last_signup"
     );
 
     const response = await fetch(endpoint.toString(), {
@@ -104,6 +115,10 @@ export async function fetchFunnelAggregates(): Promise<{
               geo_disqualified: existing.geo_disqualified + row.geo_disqualified,
               core_market: existing.core_market + row.core_market,
               consented: existing.consented + row.consented,
+              webinar_invited: existing.webinar_invited + row.webinar_invited,
+              product_started: existing.product_started + row.product_started,
+              conversions: existing.conversions + row.conversions,
+              revenue_cents: existing.revenue_cents + row.revenue_cents,
             }
           : row
       );

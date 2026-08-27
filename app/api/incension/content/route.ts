@@ -20,6 +20,10 @@ import {
   unclaimedReels,
   type ReelRow,
 } from "@/incension/content/model";
+import {
+  buildPipeline,
+  type PipelineStage,
+} from "@/incension/content/pipeline";
 
 export const maxDuration = 60;
 
@@ -58,6 +62,8 @@ export interface ContentResponse {
     dmsLast24h: number;
     clicksLast24h: number;
   };
+  /** Era 2 only. Era 1 is a vaulted benchmark and never feeds a working figure. */
+  pipeline: PipelineStage[];
   funnelOk: boolean;
   funnelError?: string;
   insightsAvailable: boolean;
@@ -142,8 +148,8 @@ export async function GET(request: NextRequest) {
         reels: acc.reels + 1,
         dmsSent: acc.dmsSent + (r.dmsSent ?? 0),
         clicks: acc.clicks + (r.clicks ?? 0),
-        signups: acc.signups + r.signups,
-        qualified: acc.qualified + r.qualified,
+        signups: acc.signups + r.campaignSignups,
+        qualified: acc.qualified + r.campaignQualified,
         dmsLast24h: acc.dmsLast24h + r.dmsLast24h,
         clicksLast24h: acc.clicksLast24h + r.clicksLast24h,
       }),
@@ -170,8 +176,8 @@ export async function GET(request: NextRequest) {
       seen.add(r.campaignId);
       dedupedDms += r.dmsSent ?? 0;
       dedupedClicks += r.clicks ?? 0;
-      dedupedSignups += r.signups;
-      dedupedQualified += r.qualified;
+      dedupedSignups += r.campaignSignups;
+      dedupedQualified += r.campaignQualified;
     }
     totals.dmsSent = dedupedDms;
     totals.clicks = dedupedClicks;
@@ -183,6 +189,7 @@ export async function GET(request: NextRequest) {
       unclaimed: unclaimedReels(rows),
       rows,
       totals,
+      pipeline: buildPipeline(era2),
       funnelOk,
       funnelError,
       insightsAvailable,

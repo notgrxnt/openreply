@@ -65,11 +65,26 @@ export interface ReelRow {
   /** How dmsSent/clicks were derived, so the UI never presents a guess as a fact. */
   attribution: "post-campaign" | "per-reel" | "unattributed";
 
-  // Funnel (Supabase)
-  signups: number;
-  qualified: number;
-  coreMarket: number;
-  geoDisqualified: number;
+  // Funnel (Supabase). Null where the campaign serves many reels, so its
+  // signups belong to no single one — the same rule as dmsSent.
+  signups: number | null;
+  qualified: number | null;
+  coreMarket: number | null;
+  geoDisqualified: number | null;
+  webinarInvited: number | null;
+  productStarted: number | null;
+  conversions: number | null;
+  revenueCents: number | null;
+  /**
+   * The campaign's own totals, always populated. Display uses the per-reel
+   * fields above and shows a dash when they are unknown; account-level tiles
+   * still need a true figure, and they de-duplicate by campaign anyway.
+   */
+  campaignSignups: number;
+  campaignQualified: number;
+  campaignWebinar: number;
+  campaignConversions: number;
+  campaignRevenueCents: number;
 
   // Derived
   era: 1 | 2;                   // 1 = vaulted benchmark, 2 = the working era
@@ -358,10 +373,23 @@ export async function buildReelRows({
       dmsLast24h,
       clicksLast24h,
 
-      signups: agg.signups,
-      qualified: agg.qualified,
-      coreMarket: agg.core_market,
-      geoDisqualified: agg.geo_disqualified,
+      // Signups arrive keyed on utm_content, which is a CAMPAIGN. For a
+      // post-specific campaign that is this reel. For the catch-all it is
+      // thirteen reels' worth, and printing it against each one repeats the
+      // exact mistake the DM column stopped making.
+      campaignSignups: agg.signups,
+      campaignQualified: agg.qualified,
+      campaignWebinar: agg.webinar_invited,
+      campaignConversions: agg.conversions,
+      campaignRevenueCents: agg.revenue_cents,
+      signups: postSpecific ? agg.signups : null,
+      qualified: postSpecific ? agg.qualified : null,
+      coreMarket: postSpecific ? agg.core_market : null,
+      geoDisqualified: postSpecific ? agg.geo_disqualified : null,
+      webinarInvited: postSpecific ? agg.webinar_invited : null,
+      productStarted: postSpecific ? agg.product_started : null,
+      conversions: postSpecific ? agg.conversions : null,
+      revenueCents: postSpecific ? agg.revenue_cents : null,
 
       era: new Date(m.timestamp).getTime() >= ERA_2_START ? 2 : 1,
       commentToDm: dmsSent === null ? null : ratio(dmsSent, comments),

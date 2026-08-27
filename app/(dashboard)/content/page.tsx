@@ -148,7 +148,10 @@ export default function ContentPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Content</h1>
+        <span className="eyebrow">Era 2 · since 12 Aug 2026</span>
+        <h1 className="mt-2">
+          What your reels actually <em>produced</em>.
+        </h1>
         <p className="text-sm text-muted mt-1">
           Reels joined to DMs, clicks and leads — the part Instagram can&apos;t
           show you.
@@ -171,8 +174,8 @@ export default function ContentPage() {
       </div>
 
       <section>
-        <h2 className="text-lg font-semibold text-foreground mb-3">
-          What&apos;s working now
+        <h2 className="mb-3">
+          Moving <em>now</em>.
         </h2>
         {working.length === 0 ? (
           <p className="text-sm text-muted">
@@ -189,8 +192,8 @@ export default function ContentPage() {
 
       {unclaimed.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-foreground mb-1">
-            Unclaimed reels
+          <h2 className="mb-1">
+            Comments falling on the <em>floor</em>.
           </h2>
           <p className="text-sm text-muted mb-3">
             Getting comments with no campaign attached — these are leads
@@ -205,8 +208,8 @@ export default function ContentPage() {
       )}
 
       <section>
-        <h2 className="text-lg font-semibold text-foreground mb-3">
-          Full funnel per reel
+        <h2 className="mb-3">
+          Every reel, reach through to <em>leads</em>.
         </h2>
         <p className="text-xs text-muted mb-3">
           Era 2 — everything since the restart on 12 Aug 2026. Era 1 is vaulted

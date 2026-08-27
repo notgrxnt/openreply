@@ -1,61 +1,158 @@
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;1,400&family=Lato:wght@300;400;700&display=swap");
 
-/* Incension Health — Universal Style Guide
-   Tan-to-white palette, taken verbatim from the Incension Health Assessment.
-   Same bones as the blue system (Playfair/Lato, .25em eyebrows); only the hue
-   changed. Rule that trips people up: funnel surfaces are sharp, dashboard
-   surfaces are rounded. This is a dashboard.
+/* Incension Content OS — achromatic chassis, categorical data.
+   ============================================================================
 
-   TOKEN NAMES ARE DELIBERATELY UNCHANGED. `--color-sky` now holds tan, not
-   blue. Renaming these would mean editing every upstream component that uses
-   `bg-sky` / `text-steel`, which is exactly what INCENSION-OVERLAY.md exists to
-   prevent. Semantic aliases for the real names are defined below; use those in
-   anything new. */
+   THE GOVERNING LAW: the chrome is achromatic, hue means data.
+
+   Every pixel of interface — background, cards, borders, text, nav, buttons,
+   table rules — is white, black, or a gray between. The only colored things on
+   a screen are marks that encode a category, a stage or a magnitude, plus one
+   reserved red for failure. That is what buys the vibrance: pink and cyan are
+   loud because nothing competes with them. The test for any colored pixel:
+   can you say which data value it represents? If not, it is gray.
+
+   TOKEN NAMES ARE DELIBERATELY UNCHANGED from the previous system. Upstream
+   components use `bg-sky` / `text-steel` / `bg-accent` throughout, and renaming
+   would mean editing files INCENSION-OVERLAY.md exists to keep us out of. So
+   the names stay and the VALUES move to the achromatic ramp — which re-skins
+   every upstream surface without touching a single component.
+
+   Read the comment on the right of each line; that is what the colour now is. */
 
 @theme inline {
-  /* Surfaces */
-  --color-background: #fdfaf5;      /* near white */
-  --color-foreground: #241d16;      /* ink — headlines */
-  --color-surface: #ffffff;         /* cards, fields */
-  --color-surface-hover: #f7f0e5;   /* ecru */
-  --color-border: rgba(154, 114, 71, 0.20);
-  --color-border-hover: rgba(154, 114, 71, 0.45);
-  --color-muted: #94836f;           /* captions */
-  --color-body: #56483b;            /* paragraphs */
+  /* ── Chrome. Achromatic. All UI lives here. ─────────────────────────── */
+  --color-background: #fafafa;      /* field — page background */
+  --color-foreground: #0b0b0b;      /* ink — headings, primary values  19.7:1 */
+  --color-surface: #ffffff;         /* cards, panels, chart surface */
+  --color-surface-hover: #f4f4f4;   /* sunken — hover fill, table track */
+  --color-border: #e4e4e4;          /* line — hairlines, gridlines */
+  --color-border-hover: #d8d8d8;    /* line-strong — header rules */
+  --color-muted: #6e6e6e;           /* labels, axis text, meta          5.1:1 */
+  --color-body: #3d3d3d;            /* body copy                       10.9:1 */
 
-  /* Brand tans — names kept from the blue system, values are Health's.
-     Read the alias on the right; that is what the colour actually is. */
-  --color-sky: #e4d2b8;             /* tan */
-  --color-wash: #eee2cf;            /* wash */
-  --color-ice: #f7f0e5;             /* ecru */
-  --color-steel: #9a7247;           /* clay — italic accent, labels, focus */
-  --color-mid: #c2a37c;             /* sand — borders, dividers */
-  --color-accent: #6b4f35;          /* umber — primary CTA, dark bands */
-  --color-accent-hover: #503a26;    /* umber deep — hover, deep band */
+  /* Legacy brand names, repointed to gray. Nothing here carries hue. */
+  --color-sky: #f4f4f4;             /* was tan fill  → sunken */
+  --color-wash: #fafafa;            /* was wash      → field */
+  --color-ice: #f4f4f4;             /* was ecru      → sunken */
+  --color-steel: #0b0b0b;           /* was clay      → ink (the italic accent) */
+  --color-mid: #d8d8d8;             /* was sand      → line-strong */
+  --color-accent: #0b0b0b;          /* was umber     → ink (primary CTA) */
+  --color-accent-hover: #2a2a2a;    /* was umber-deep → ink lifted */
 
-  /* Semantic aliases. Same values; use these in anything new. */
-  --color-tan: #e4d2b8;
-  --color-ecru: #f7f0e5;
-  --color-nearwhite: #fdfaf5;
-  --color-clay: #9a7247;
-  --color-sand: #c2a37c;
-  --color-umber: #6b4f35;
-  --color-umber-deep: #503a26;
-  --color-ink: #241d16;
+  --color-tan: #f4f4f4;
+  --color-ecru: #f4f4f4;
+  --color-nearwhite: #fafafa;
+  --color-clay: #0b0b0b;
+  --color-sand: #d8d8d8;
+  --color-umber: #0b0b0b;
+  --color-umber-deep: #2a2a2a;
+  --color-ink: #0b0b0b;
 
-  --color-success: #3f7d5c;
-  --color-error: #b4534a;
-  --color-warning: #b5813f;
+  /* Status. Depth carries state; one reserved red carries failure. */
+  --color-success: #0b0b0b;         /* was green — status is depth, not hue */
+  --color-warning: #6e6e6e;         /* was amber — ditto */
+  --color-error: #d02b20;           /* critical — failures only, with a label */
 
   --font-sans: "Lato", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-display: "Playfair Display", Georgia, serif;
-  --font-mono: ui-monospace, monospace;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 
-  /* Dashboard geometry — rounded, per the style guide */
   --radius: 14px;
   --radius-sm: 10px;
   --radius-pill: 999px;
+}
+
+/* ── Raw tokens, for hand-authored SVG and component CSS ──────────────── */
+:root {
+  --surface: #ffffff;
+  --field: #fafafa;
+  --sunken: #f4f4f4;
+  --line: #e4e4e4;
+  --line-strong: #d8d8d8;
+  --ink: #0b0b0b;
+  --ink-2: #3d3d3d;
+  --muted: #6e6e6e;
+  --on-dark: #ffffff;
+  --on-dark-2: rgba(255, 255, 255, 0.72);
+
+  /* Categorical — fixed order, never cycled. Slot 1 is always pink.
+     Generated against the six-check validator, not picked by eye:
+     lightness band PASS · chroma floor PASS · CVD separation PASS
+     (worst adjacent pair yellow↔green ΔE 11.7) · normal-vision floor PASS
+     (worst ΔE 25.1) · contrast WARN on yellow at 2.18:1 — hence the relief
+     rule below. Do not change a hex without re-running the validator. */
+  --series-1: #e8006f;   /* pink   */
+  --series-2: #0089b4;   /* cyan   */
+  --series-3: #e5a400;   /* yellow */
+  --series-4: #00964e;   /* green  */
+  --series-5: #6b3fd4;   /* violet */
+  --series-6: #f0641e;   /* orange */
+
+  /* Darkened twins. ONLY for thin marks — 2px lines, dots under 8px, 1px
+     strokes — and for a value set inside a light fill. Never for text. */
+  --series-1-ink: #a50050;
+  --series-2-ink: #006c8f;
+  --series-3-ink: #7a5000;
+  --series-4-ink: #00713b;
+  --series-5-ink: #4f27ad;
+  --series-6-ink: #a8400e;
+
+  /* Ordinal — funnel stage, cyan light→deep. Monotone lightness,
+     every adjacent ΔL ≥ 0.06, light end ≥ 2:1 on white. */
+  --stage-1: #6dbddc;   /* Reel       */
+  --stage-2: #36a3c8;   /* Comment    */
+  --stage-3: #0089b4;   /* Lead       */
+  --stage-4: #006c8f;   /* Webinar    */
+  --stage-5: #00516c;   /* Conversion */
+
+  /* Market buckets — the geography split. Validated as a categorical trio on
+     #fafafa: lightness band, chroma floor, CVD separation (worst adjacent
+     ΔE 19.6 protan / 31.5 tritan) and 3:1 contrast all PASS.
+     Do NOT swap "other" for a grey: grey fails the chroma floor outright and
+     collapses to ΔE 4.4 against the India hue under deuteranopia. */
+  --geo-core:  #0089b4;   /* core commerce markets */
+  --geo-india: #f0641e;   /* the sway being managed */
+  --geo-other: #6b3fd4;   /* everything else */
+
+  /* Status — RESERVED. Never a categorical slot, never shipped without the
+     label beside it. A battle station has to be readable under pressure, and
+     that is the one job hue does better than depth. */
+  --ok:       #00713b;
+  --ok-bg:    #e6f4ec;
+  --warn:     #7a5000;
+  --warn-bg:  #fbf1dc;
+  --crit:     #b42318;
+  --crit-bg:  #fdeceb;
+
+  /* Sequential — magnitude, pink light→deep */
+  --mag-1: #f275a0;
+  --mag-2: #e63e84;
+  --mag-3: #d30069;
+  --mag-4: #a50050;
+  --mag-5: #77003a;
+
+  --critical: #d02b20;
+
+  /* Re-declared here, not only in @theme: `@theme inline` may inline values
+     into utilities rather than emitting the custom properties, and the
+     hand-authored component CSS below reads them through var(). Duplicating
+     four declarations is cheaper than a silent font fallback. */
+  --font-sans: "Lato", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 6px 24px rgba(11, 11, 11, 0.05);
+  --shadow-lift: 0 10px 28px rgba(11, 11, 11, 0.09);
+  --shadow-flat: 0 2px 10px rgba(11, 11, 11, 0.04);
+
+  --t-fast: 0.15s ease;
+  --t-med: 0.3s ease;
+  --t-slow: 0.6s ease;
 }
 
 html {
@@ -63,44 +160,67 @@ html {
 }
 
 body {
-  background: var(--color-background);
-  color: var(--color-body);
+  background: var(--field);
+  color: var(--ink-2);
   font-family: var(--font-sans);
-  font-weight: 400;
+  font-weight: 300;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-family: var(--font-display);
   font-weight: 300;
-  color: var(--color-foreground);
+  color: var(--ink);
   letter-spacing: -0.01em;
 }
 
-/* Eyebrows / section labels — uppercase, wide tracking, per the guide. */
-.eyebrow {
-  font-size: 10.5px;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: var(--color-mid);
+/* The signature move — italic, and BLACK. Hue is spoken for. */
+h1 em,
+h2 em,
+h3 em {
+  font-style: italic;
+  font-weight: 300;
+  color: var(--ink);
 }
 
-/* Focus ring — visible, for keyboard users. */
+/* No font-weight above 400, anywhere.
+   Upstream markup is full of `font-semibold` and `font-bold`; neutralising
+   them here re-skins every one without editing a component file. */
+.font-medium,
+.font-semibold,
+.font-bold,
+.font-extrabold,
+strong,
+b,
+th {
+  font-weight: 400;
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
-/* Form fields already have a border, so keep the focus ring hugging the
-   field instead of bleeding up toward the label above it. */
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
   outline-offset: 1px;
 }
 
-/* iOS Safari zooms the whole page in when a focused field's text is under 16px,
-   and never zooms back out. Fields are text-sm (14px) throughout, so raise them
-   to 16px on phones and leave the desktop sizing alone. */
+/* iOS Safari zooms in on focused fields under 16px and never zooms back. */
 @media (max-width: 640px) {
   input,
   textarea,
@@ -109,33 +229,246 @@ select:focus-visible {
   }
 }
 
-/* Panel — flat container. Replaces .glass / .glass-strong. */
+/* ── Containers ───────────────────────────────────────────────────────── */
+
 .panel {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: 0 6px 24px rgba(42, 96, 128, 0.06);
+  box-shadow: var(--shadow-flat);
 }
 
-/* Kept as no-op aliases so existing markup degrades to plain surfaces
-   instead of breaking. Prefer .panel in new code. */
+/* No-op aliases so existing markup degrades to a plain surface. */
 .glass,
 .glass-strong {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: 0 6px 24px rgba(42, 96, 128, 0.06);
+  box-shadow: var(--shadow-flat);
 }
 
-/* Dashboard controls: inputs and small buttons pick up the softer radius
-   so nothing reads as the old sharp-cornered funnel chassis. */
-input, textarea, select, button {
+/* Links, not states: these lift. */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+  transition: var(--t-med);
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--line-strong);
+}
+
+/* The one saturated block on a screen — black, not colored. */
+.band {
+  background: var(--ink);
+  color: var(--on-dark);
+  border-radius: var(--radius);
+  padding: 32px 36px;
+}
+
+.band h1,
+.band h2,
+.band h3,
+.band h2 em {
+  color: var(--surface);
+}
+
+.band p {
+  color: var(--on-dark-2);
+}
+
+/* ── Stat tile. Figures are SANS, not serif — a serif on a hero number
+      reads as decoration in a data tool. ─────────────────────────────── */
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-flat);
+}
+
+.stat .n {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 36px;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.stat .unit {
+  font-size: 18px;
+  color: var(--muted);
+  margin-left: 3px;
+}
+
+.stat .meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* ── Status. Depth, plus one reserved red. ───────────────────────────── */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+  background: transparent;
+}
+
+.pill::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pill.is-live {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.pill.is-done {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.pill.is-paused {
+  border-color: var(--line-strong);
+  color: var(--muted);
+}
+
+.pill.is-failed {
+  border-color: var(--critical);
+  color: var(--critical);
+}
+
+/* The one colored chip, because it IS data: the category dot carries the
+   entity's hue, the text stays ink. Same hue in every chart on the page. */
+.cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.cat::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cat-color, var(--series-1));
+  flex-shrink: 0;
+}
+
+/* ── Table. No zebra, no vertical rules, numbers tabular. ─────────────── */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: left;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+}
+
+.table tbody td {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: var(--sunken);
+}
+
+.table td .primary {
+  color: var(--ink);
+}
+
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.table .mono {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── Dashboard controls ──────────────────────────────────────────────── */
+
+input,
+textarea,
+select,
+button {
   border-radius: var(--radius-sm);
 }
 
 .gradient-mesh {
   background: none;
 }
+
+/* ── Motion. 0.6s ceiling. ───────────────────────────────────────────── */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  opacity: 0;
+  animation: rise 0.6s ease forwards;
+}
+.rise-1 { animation-delay: 0.1s; }
+.rise-2 { animation-delay: 0.25s; }
+.rise-3 { animation-delay: 0.4s; }
+.rise-4 { animation-delay: 0.55s; }
 
 .animate-fade-in,
 .animate-slide-in,
@@ -149,6 +482,67 @@ input, textarea, select, button {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* ── Battle station ──────────────────────────────────────────────────────
+   Density over decoration. Tiles carry a verdict, not just a number, and the
+   verdict is a left rule plus a word — never hue alone. ─────────────────── */
+
+.stat { position: relative; overflow: hidden; }
+
+.stat-good,
+.stat-warning,
+.stat-critical { padding-left: 27px; }
+
+.stat-good::before,
+.stat-warning::before,
+.stat-critical::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+}
+
+.stat-good::before     { background: var(--ok); }
+.stat-warning::before  { background: var(--warn); }
+.stat-critical::before { background: var(--crit); }
+
+/* Verdict chip. Always carries a word — the colour is the second encoding. */
+.verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.verdict-good     { background: var(--ok-bg);   color: var(--ok); }
+.verdict-warning  { background: var(--warn-bg); color: var(--warn); }
+.verdict-critical { background: var(--crit-bg); color: var(--crit); }
+.verdict-neutral  { background: var(--sunken);  color: var(--ink-2); }
+
+/* Denser grid than the reading pages — this is a console, not a report. */
+.station {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.station .stat { padding-top: 18px; padding-bottom: 18px; }
+
+/* Tabular figures everywhere a number is compared down a column. */
+.table .num,
+.stat .n { font-variant-numeric: tabular-nums; }
+
+/* Row-level threshold rule in dense tables. */
+tr.row-critical td:first-child { box-shadow: inset 3px 0 0 var(--crit); }
+tr.row-warning  td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
+tr.row-good     td:first-child { box-shadow: inset 3px 0 0 var(--ok); }
