@@ -1,30 +1,48 @@
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;1,400&family=Lato:wght@300;400;700&display=swap");
 
-/* Incension — Universal Style Guide
-   Tokens mirror GRANT-OS/UNIVERSAL-STYLE-GUIDE.md and brand-tokens.css.
-   Rule that trips people up: funnel surfaces are sharp, dashboard surfaces
-   are rounded. This is a dashboard. */
+/* Incension Health — Universal Style Guide
+   Tan-to-white palette, taken verbatim from the Incension Health Assessment.
+   Same bones as the blue system (Playfair/Lato, .25em eyebrows); only the hue
+   changed. Rule that trips people up: funnel surfaces are sharp, dashboard
+   surfaces are rounded. This is a dashboard.
+
+   TOKEN NAMES ARE DELIBERATELY UNCHANGED. `--color-sky` now holds tan, not
+   blue. Renaming these would mean editing every upstream component that uses
+   `bg-sky` / `text-steel`, which is exactly what INCENSION-OVERLAY.md exists to
+   prevent. Semantic aliases for the real names are defined below; use those in
+   anything new. */
 
 @theme inline {
   /* Surfaces */
-  --color-background: #f8fcff;      /* near-white page */
-  --color-foreground: #1a2830;      /* headings */
+  --color-background: #fdfaf5;      /* near white */
+  --color-foreground: #241d16;      /* ink — headlines */
   --color-surface: #ffffff;         /* cards, fields */
-  --color-surface-hover: #eef7fd;   /* ice */
-  --color-border: rgba(74, 143, 181, 0.22);
-  --color-border-hover: rgba(74, 143, 181, 0.45);
-  --color-muted: #7a9aaa;           /* captions */
-  --color-body: #3d5a6b;            /* paragraphs */
+  --color-surface-hover: #f7f0e5;   /* ecru */
+  --color-border: rgba(154, 114, 71, 0.20);
+  --color-border-hover: rgba(154, 114, 71, 0.45);
+  --color-muted: #94836f;           /* captions */
+  --color-body: #56483b;            /* paragraphs */
 
-  /* Brand blues */
-  --color-sky: #c8dff0;
-  --color-wash: #daedf8;
-  --color-ice: #eef7fd;
-  --color-steel: #4a8fb5;
-  --color-mid: #6aadd0;
-  --color-accent: #2a6080;          /* deep navy — primary CTA */
-  --color-accent-hover: #1e4f68;    /* dark navy */
+  /* Brand tans — names kept from the blue system, values are Health's.
+     Read the alias on the right; that is what the colour actually is. */
+  --color-sky: #e4d2b8;             /* tan */
+  --color-wash: #eee2cf;            /* wash */
+  --color-ice: #f7f0e5;             /* ecru */
+  --color-steel: #9a7247;           /* clay — italic accent, labels, focus */
+  --color-mid: #c2a37c;             /* sand — borders, dividers */
+  --color-accent: #6b4f35;          /* umber — primary CTA, dark bands */
+  --color-accent-hover: #503a26;    /* umber deep — hover, deep band */
+
+  /* Semantic aliases. Same values; use these in anything new. */
+  --color-tan: #e4d2b8;
+  --color-ecru: #f7f0e5;
+  --color-nearwhite: #fdfaf5;
+  --color-clay: #9a7247;
+  --color-sand: #c2a37c;
+  --color-umber: #6b4f35;
+  --color-umber-deep: #503a26;
+  --color-ink: #241d16;
 
   --color-success: #3f7d5c;
   --color-error: #b4534a;
