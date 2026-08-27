@@ -210,7 +210,7 @@ export async function buildReelRows({
           automationId: { in: automationIds },
           recipientToken: { not: null },
         },
-        select: { recipientToken: true },
+        select: { recipientToken: true, automationId: true },
       }),
     ]);
 
@@ -245,9 +245,17 @@ export async function buildReelRows({
   }
   const clicksByMedia = new Map<string, number>();
   const clickersByMedia = new Map<string, Set<string>>();
+  // Distinct clickers per CAMPAIGN. A post-specific campaign fires on exactly
+  // one reel, so its distinct clickers are that reel's — no mediaId history
+  // required, which is what lets an older reel show a real CTR today.
+  const clickersByAutomation = new Map<string, Set<string>>();
   for (const c of tokenClicks) {
     const token = c.recipientToken;
     if (!token) continue;
+    let byAuto = clickersByAutomation.get(c.automationId);
+    if (!byAuto) clickersByAutomation.set(c.automationId, (byAuto = new Set()));
+    byAuto.add(token);
+
     const mediaId = mediaByToken.get(token);
     if (!mediaId) continue;
     clicksByMedia.set(mediaId, (clicksByMedia.get(mediaId) ?? 0) + 1);
@@ -291,7 +299,7 @@ export async function buildReelRows({
     if (postSpecific && automation) {
       dmsSent = sentBy.get(automation.id) ?? 0;
       clicks = clicksBy.get(automation.id) ?? 0;
-      uniqueClickers = clickersByMedia.get(m.id)?.size ?? null;
+      uniqueClickers = clickersByAutomation.get(automation.id)?.size ?? null;
       attribution = "post-campaign";
     } else if (dmsByMedia.has(m.id)) {
       dmsSent = dmsByMedia.get(m.id) ?? 0;
