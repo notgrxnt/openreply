@@ -26,7 +26,8 @@ No new dependencies. Talks to Supabase over `fetch`.
 
 ## Environment
 
-    INCENSION_SUPABASE_URL          https://<ref>.supabase.co
-    INCENSION_SUPABASE_SERVICE_KEY  service-role key (server only, never NEXT_PUBLIC_)
+    INCENSION_SUPABASE_URL          https://<portal-ref>.supabase.co   # content dashboard reads
+    INCENSION_HEALTH_SUPABASE_URL   https://<health-ref>.supabase.co   # sync writes
+    INCENSION_HEALTH_SERVICE_KEY  service-role key (server only, never NEXT_PUBLIC_)
     INCENSION_SYNC_SECRET           shared secret the cron caller presents
     INCENSION_ERA                   defaults to h1

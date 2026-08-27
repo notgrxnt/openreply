@@ -5,8 +5,12 @@
  * RPC. Service-role key, so this must never be imported into a client bundle.
  */
 
-const URL_BASE = process.env.INCENSION_SUPABASE_URL ?? "";
-const SERVICE_KEY = process.env.INCENSION_SUPABASE_SERVICE_KEY ?? "";
+// Health project, NOT the Portal. The content dashboard reads the Portal's
+// aggregate view through INCENSION_SUPABASE_URL; this module writes to
+// Incension Health. Two different projects, so two different names — sharing
+// one would mean whichever value you set silently broke the other module.
+const URL_BASE = process.env.INCENSION_HEALTH_SUPABASE_URL ?? "";
+const SERVICE_KEY = process.env.INCENSION_HEALTH_SERVICE_KEY ?? "";
 
 export function syncConfigured(): boolean {
   return Boolean(URL_BASE && SERVICE_KEY);

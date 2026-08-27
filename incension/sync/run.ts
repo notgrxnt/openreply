@@ -32,7 +32,7 @@ export async function runSync(
       stitched: null,
       windowFrom: null,
       error:
-        "INCENSION_SUPABASE_URL / INCENSION_SUPABASE_SERVICE_KEY are not set",
+        "INCENSION_HEALTH_SUPABASE_URL / INCENSION_HEALTH_SERVICE_KEY are not set",
     };
   }
 
